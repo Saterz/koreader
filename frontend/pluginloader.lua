@@ -17,6 +17,7 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local ffiUtil = require("ffi/util")
 local _ = require("gettext")
+local T = ffiUtil.template
 
 local DEFAULT_PLUGIN_PATH = "plugins"
 
