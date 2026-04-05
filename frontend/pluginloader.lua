@@ -344,6 +344,7 @@ function PluginLoader:genPluginManagerSubItem()
                 local ConfirmBox = require("ui/widget/confirmbox")
                 UIManager:show(ConfirmBox:new{
                     text = plugin.description .. "\n\n" .. T(_("Are you sure you want to delete the plugin '%1'?"), plugin.fullname),
+                    ok_text = _("Delete"),
                     ok_callback = function()
                         self:stopPluginInstanceByName(plugin.name)
                         local success, err = ffiUtil.purgeDir(plugin.path)
