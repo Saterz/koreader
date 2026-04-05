@@ -341,15 +341,22 @@ function PluginLoader:genPluginManagerSubItem()
                 end
             end,
             hold_callback = function()
+                local CheckButton = require("ui/widget/checkbutton")
                 local ConfirmBox = require("ui/widget/confirmbox")
-                UIManager:show(ConfirmBox:new{
+                local instance = self:getPluginInstance(plugin.name)
+                local deletePluginSettingsFn = instance and instance.deletePluginSettings
+                local delete_plugin_settings = false
+                local delete_plugin_settings_checkbox
+                local confirmbox = ConfirmBox:new{
                     text = plugin.description .. "\n\n" .. T(_("Are you sure you want to delete the plugin '%1'?"), plugin.fullname),
                     ok_text = _("Delete"),
                     ok_callback = function()
                         self:stopPluginInstanceByName(plugin.name)
                         local success, err = ffiUtil.purgeDir(plugin.path)
                         if success then
-                            self:deletePluginSettingsByName(plugin.name)
+                            if delete_plugin_settings then
+                                self:deletePluginSettingsByName(plugin.name)
+                            end
                             local plugins_disabled = G_reader_settings:readSetting("plugins_disabled") or {}
                             if plugins_disabled[plugin.name] then
                                 plugins_disabled[plugin.name] = nil
@@ -364,7 +371,17 @@ function PluginLoader:genPluginManagerSubItem()
                             })
                         end
                     end,
-                })
+                }
+                delete_plugin_settings_checkbox = CheckButton:new{
+                    parent = confirmbox,
+                    text = _("Also delete plugin settings"),
+                    enabled = type(deletePluginSettingsFn) == "function",
+                    callback = function()
+                        delete_plugin_settings = not delete_plugin_settings
+                    end,
+                }
+                confirmbox:addWidget(delete_plugin_settings_checkbox)
+                UIManager:show(confirmbox)
             end,
         }
         if plugin.is_builtin then

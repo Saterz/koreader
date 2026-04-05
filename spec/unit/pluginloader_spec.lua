@@ -164,6 +164,9 @@ describe("PluginLoader module", function()
 
     it("deletes plugin settings by internal plugin id", function()
         local shown_widget
+        local instance = {
+            deletePluginSettings = function() end,
+        }
 
         stub(PluginLoader, "loadPlugins", function()
             return {
@@ -174,6 +177,9 @@ describe("PluginLoader module", function()
                     path = "plugins/test.koplugin",
                 },
             }, {}
+        end)
+        stub(PluginLoader, "getPluginInstance", function()
+            return instance
         end)
         stub(PluginLoader, "stopPluginInstanceByName")
         stub(PluginLoader, "deletePluginSettingsByName")
@@ -191,8 +197,11 @@ describe("PluginLoader module", function()
 
         local plugin_items = PluginLoader:genPluginManagerSubItem()
         plugin_items[1].hold_callback()
+        shown_widget._added_widgets[1].checked = true
+        shown_widget._added_widgets[1].callback()
         shown_widget.ok_callback()
 
+        assert.is_true(shown_widget._added_widgets[1].enabled)
         assert.stub(PluginLoader.stopPluginInstanceByName).was.called_with(PluginLoader, "test")
         assert.stub(PluginLoader.deletePluginSettingsByName).was.called_with(PluginLoader, "test")
         assert.is_nil(G_reader_settings:readSetting("plugins_disabled").test)
@@ -202,6 +211,38 @@ describe("PluginLoader module", function()
         ffiUtil.purgeDir:revert()
         PluginLoader.deletePluginSettingsByName:revert()
         PluginLoader.stopPluginInstanceByName:revert()
+        PluginLoader.getPluginInstance:revert()
+        PluginLoader.loadPlugins:revert()
+    end)
+
+    it("shows the delete settings checkbox disabled when the plugin does not provide that hook", function()
+        local shown_widget
+
+        stub(PluginLoader, "loadPlugins", function()
+            return {
+                {
+                    name = "test",
+                    fullname = "Pretty Test",
+                    description = "from meta",
+                    path = "plugins/test.koplugin",
+                },
+            }, {}
+        end)
+        stub(PluginLoader, "getPluginInstance", function()
+            return nil
+        end)
+        stub(UIManager, "show", function(_, widget)
+            shown_widget = widget
+        end)
+
+        local plugin_items = PluginLoader:genPluginManagerSubItem()
+        plugin_items[1].hold_callback()
+
+        assert.is_not_nil(shown_widget._added_widgets)
+        assert.is_false(shown_widget._added_widgets[1].enabled)
+
+        UIManager.show:revert()
+        PluginLoader.getPluginInstance:revert()
         PluginLoader.loadPlugins:revert()
     end)
 
