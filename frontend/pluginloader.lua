@@ -15,7 +15,7 @@ local UIManager = require("ui/uimanager")
 local dbg = require("dbg")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
-local util = require("util")
+local ffiUtil = require("ffi/util")
 local _ = require("gettext")
 
 local DEFAULT_PLUGIN_PATH = "plugins"
@@ -345,7 +345,7 @@ function PluginLoader:genPluginManagerSubItem()
                     text = plugin.description .. "\n\n" .. T(_("Are you sure you want to delete the plugin '%1'?"), plugin.fullname),
                     ok_callback = function()
                         self:stopPluginInstanceByName(plugin.name)
-                        local success, err = util.purgeDir(plugin.path)
+                        local success, err = ffiUtil.purgeDir(plugin.path)
                         if success then
                             local plugins_disabled = G_reader_settings:readSetting("plugins_disabled") or {}
                             if plugins_disabled[plugin.name] then
