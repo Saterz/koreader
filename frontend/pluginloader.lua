@@ -331,18 +331,7 @@ function PluginLoader:genPluginManagerSubItem()
                     plugins_disabled[plugin.name] = nil
                 else
                     plugins_disabled[plugin.name] = true
-                    local instance = self:getPluginInstance(plugin.name)
-                    local stopPluginFn = instance and instance.stopPlugin
-                    if type(stopPluginFn) == "function" then
-                        local ok, err = self:stopPluginInstance(instance)
-                        if not ok then
-                            logger.err("PluginLoader: Failed to stop plugin instance", plugin.name, err)
-                            ok, err = self:stopPluginInstance(instance, true)
-                            if not ok then
-                                logger.err("PluginLoader: Failed to force-stop plugin instance", plugin.name, err)
-                            end
-                        end
-                    end
+                    self:stopPluginInstanceByName(plugin.name)
                 end
                 G_reader_settings:saveSetting("plugins_disabled", plugins_disabled)
                 if self.show_info then
@@ -355,18 +344,7 @@ function PluginLoader:genPluginManagerSubItem()
                 UIManager:show(ConfirmBox:new{
                     text = plugin.description .. "\n\n" .. T(_("Are you sure you want to delete the plugin '%1'?"), plugin.fullname),
                     ok_callback = function()
-                        local instance = self:getPluginInstance(plugin.name)
-                        local stopPluginFn = instance and instance.stopPlugin
-                        if type(stopPluginFn) == "function" then
-                            local ok, err = self:stopPluginInstance(instance)
-                            if not ok then
-                                logger.err("PluginLoader: Failed to stop plugin instance", plugin.name, err)
-                                ok, err = self:stopPluginInstance(instance, true)
-                                if not ok then
-                                    logger.err("PluginLoader: Failed to force-stop plugin instance", plugin.name, err)
-                                end
-                            end
-                        end
+                        self:stopPluginInstanceByName(plugin.name)
                         local success, err = util.purgeDir(plugin.path)
                         if success then
                             local plugins_disabled = G_reader_settings:readSetting("plugins_disabled") or {}
@@ -427,10 +405,32 @@ function PluginLoader:createPluginInstance(plugin, attr)
     end
 end
 
+--- Calls the stopPlugin() method on a plugin instance of a given name if it's currently loaded.
+--- This is only intended for plugins that manage external resources or processes.
+--- @param name string The name of the plugin to stop.
+--- @return boolean Success, string|nil
+function PluginLoader:stopPluginInstanceByName(name)
+    local instance = self:getPluginInstance(name)
+    local stopPluginFn = instance and instance.stopPlugin
+    if type(stopPluginFn) ~= "function" then
+        return true, nil
+    end
+    local ok, err = self:stopPluginInstance(instance)
+    if ok then
+        return true, nil
+    end
+    logger.err("PluginLoader: Failed to stop plugin instance", name, err)
+    ok, err = self:stopPluginInstance(instance, true)
+    if not ok then
+        logger.err("PluginLoader: Failed to force-stop plugin instance", name, err)
+    end
+    return false, err
+end
+
 --- Calls the stopPlugin() method on a plugin instance if it's currently loaded.
 --- This is only intended for plugins that manage external resources or processes.
 --- @param instance table The plugin instance to stop.
---- @param force boolean If true, forces the plugin to stop even if it encounters errors.
+--- @param force boolean|nil If true, forces the plugin to stop even if it encounters errors.
 --- @return boolean Success, string|nil
 function PluginLoader:stopPluginInstance(instance, force)
     local ok, err = false, "no stopPlugin method"
