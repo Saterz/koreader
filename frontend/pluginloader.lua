@@ -340,7 +340,7 @@ function PluginLoader:genPluginManagerSubItem()
                     UIManager:askForRestart()
                 end
             end,
-            hold_callback = function(touchmenu_instance)
+            hold_callback = function()
                 local ConfirmBox = require("ui/widget/confirmbox")
                 UIManager:show(ConfirmBox:new{
                     text = plugin.description .. "\n\n" .. T(_("Are you sure you want to delete the plugin '%1'?"), plugin.fullname),
