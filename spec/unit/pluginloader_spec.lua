@@ -1,10 +1,12 @@
 describe("PluginLoader module", function()
     local PluginLoader, UIManager
+    local ffiUtil
     local original_lfs
 
     setup(function()
         require("commonrequire")
         UIManager = require("ui/uimanager")
+        ffiUtil = require("ffi/util")
         original_lfs = require("libs/libkoreader-lfs")
     end)
 
@@ -158,5 +160,68 @@ describe("PluginLoader module", function()
         UIManager.askForRestart:revert()
         PluginLoader.getPluginInstance:revert()
         PluginLoader.loadPlugins:revert()
+    end)
+
+    it("deletes plugin settings by internal plugin id", function()
+        local shown_widget
+
+        stub(PluginLoader, "loadPlugins", function()
+            return {
+                {
+                    name = "test",
+                    fullname = "Pretty Test",
+                    description = "from meta",
+                    path = "plugins/test.koplugin",
+                },
+            }, {}
+        end)
+        stub(PluginLoader, "stopPluginInstanceByName")
+        stub(PluginLoader, "deletePluginSettingsByName")
+        stub(ffiUtil, "purgeDir", function()
+            return true
+        end)
+        stub(UIManager, "show", function(_, widget)
+            shown_widget = widget
+        end)
+        stub(UIManager, "askForRestart")
+
+        G_reader_settings:saveSetting("plugins_disabled", {
+            test = true,
+        })
+
+        local plugin_items = PluginLoader:genPluginManagerSubItem()
+        plugin_items[1].hold_callback()
+        shown_widget.ok_callback()
+
+        assert.stub(PluginLoader.stopPluginInstanceByName).was.called_with(PluginLoader, "test")
+        assert.stub(PluginLoader.deletePluginSettingsByName).was.called_with(PluginLoader, "test")
+        assert.is_nil(G_reader_settings:readSetting("plugins_disabled").test)
+
+        UIManager.askForRestart:revert()
+        UIManager.show:revert()
+        ffiUtil.purgeDir:revert()
+        PluginLoader.deletePluginSettingsByName:revert()
+        PluginLoader.stopPluginInstanceByName:revert()
+        PluginLoader.loadPlugins:revert()
+    end)
+
+    it("calls deletePluginSettings on the loaded plugin instance by internal plugin id", function()
+        local instance = {
+            deletePluginSettings = function() end,
+        }
+
+        stub(PluginLoader, "getPluginInstance", function()
+            return instance
+        end)
+        stub(instance, "deletePluginSettings")
+
+        local ok, err = PluginLoader:deletePluginSettingsByName("test")
+
+        assert.is_true(ok)
+        assert.is_nil(err)
+        assert.stub(instance.deletePluginSettings).was.called_with(instance)
+
+        instance.deletePluginSettings:revert()
+        PluginLoader.getPluginInstance:revert()
     end)
 end)

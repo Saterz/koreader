@@ -305,6 +305,7 @@ function PluginLoader:genPluginManagerSubItem()
                         self:stopPluginInstanceByName(plugin.name)
                         local success, err = ffiUtil.purgeDir(plugin.path)
                         if success then
+                            self:deletePluginSettingsByName(plugin.name)
                             local plugins_disabled = G_reader_settings:readSetting("plugins_disabled") or {}
                             if plugins_disabled[plugin.name] then
                                 plugins_disabled[plugin.name] = nil
@@ -356,6 +357,37 @@ function PluginLoader:stopPluginInstanceByName(name)
     if not ok then
         logger.err("PluginLoader: Failed to force-stop plugin instance", name, err)
     end
+    return false, err
+end
+
+--- Calls the deletePluginSettings() method on a plugin instance of a given name if it's currently loaded.
+--- This is only intended for plugins that manage settings in G_reader_settings or koreader/settings.
+--- @param name string The name of the plugin whose settings should be deleted.
+--- @return boolean Success, string|nil
+function PluginLoader:deletePluginSettingsByName(name)
+    local instance = self:getPluginInstance(name)
+    local deletePluginSettingsFn = instance and instance.deletePluginSettings
+    if type(deletePluginSettingsFn) ~= "function" then
+        return true, nil
+    end
+    local ok, err = self:deletePluginSettings(instance)
+    if not ok then
+        logger.err("PluginLoader: Failed to delete plugin settings", name, err)
+    end
+    return ok, err
+end
+
+--- Calls the deletePluginSettings() method on a plugin instance if it's currently loaded.
+--- This is only intended for plugins that manage settings in G_reader_settings or koreader/settings.
+--- @param instance table The plugin instance whose settings should be deleted.
+--- @return boolean Success, string|nil
+function PluginLoader:deletePluginSettings(instance)
+    local ok, err = false, "no deletePluginSettings method"
+    local fn = instance.deletePluginSettings
+    if type(fn) == "function" then
+        ok, err = pcall(fn, instance)
+    end
+    if ok then return true, nil end
     return false, err
 end
 
