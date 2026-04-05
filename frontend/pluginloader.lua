@@ -15,6 +15,7 @@ local UIManager = require("ui/uimanager")
 local dbg = require("dbg")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local util = require("util")
 local _ = require("gettext")
 
 local DEFAULT_PLUGIN_PATH = "plugins"
@@ -295,24 +296,6 @@ function PluginLoader:loadPlugins()
     return self.enabled_plugins, self.disabled_plugins
 end
 
-local function removeDir(path)
-    local attr = lfs.attributes(path, "mode")
-    if attr ~= "directory" then
-        return os.remove(path)
-    end
-    for f in lfs.dir(path) do
-        if f ~= "." and f ~= ".." then
-            local fullpath = path .. "/" .. f
-            if lfs.attributes(fullpath, "mode") == "directory" then
-                removeDir(fullpath)
-            else
-                os.remove(fullpath)
-            end
-        end
-    end
-    return lfs.rmdir(path)
-end
-
 function PluginLoader:genPluginManagerSubItem()
     if not self.all_plugins then
         local enabled_plugins, disabled_plugins = self:loadPlugins()
@@ -384,7 +367,7 @@ function PluginLoader:genPluginManagerSubItem()
                                 end
                             end
                         end
-                        local success, err = removeDir(plugin.path)
+                        local success, err = util.purgeDir(plugin.path)
                         if success then
                             local plugins_disabled = G_reader_settings:readSetting("plugins_disabled") or {}
                             if plugins_disabled[plugin.name] then
