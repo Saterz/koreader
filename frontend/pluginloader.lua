@@ -326,7 +326,7 @@ function PluginLoader:genPluginManagerSubItem()
             hold_callback = function(touchmenu_instance)
                 local ConfirmBox = require("ui/widget/confirmbox")
                 UIManager:show(ConfirmBox:new{
-                    text = plugin.description .. "\n\n" .. string.format(_("Are you sure you want to delete the plugin '%s'?"), plugin.fullname),
+                    text = plugin.description .. "\n\n" .. T(_("Are you sure you want to delete the plugin '%1'?"), plugin.fullname),
                     ok_callback = function()
                         local instance = self:getPluginInstance(plugin.name)
                         local stopPluginFn = instance and instance.stopPlugin
@@ -352,7 +352,7 @@ function PluginLoader:genPluginManagerSubItem()
                         else
                             local InfoMessage = require("ui/widget/infomessage")
                             UIManager:show(InfoMessage:new{
-                                text = string.format(_("Failed to delete plugin:\n%s"), tostring(err)),
+                                text = _("Failed to delete plugin:") .. "\n" .. err,
                             })
                         end
                     end,
