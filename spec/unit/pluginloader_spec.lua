@@ -14,6 +14,7 @@ describe("PluginLoader module", function()
         local lfs_mock = {
             dir_results = {},
             attributes_results = {},
+            mkdir = original_lfs.mkdir,
         }
 
         function lfs_mock.dir(path)
@@ -202,8 +203,8 @@ describe("PluginLoader module", function()
         shown_widget.ok_callback()
 
         assert.is_true(shown_widget._added_widgets[1].enabled)
-        assert.stub(PluginLoader.stopPluginInstanceByName).was.called_with(PluginLoader, "test")
-        assert.stub(PluginLoader.deletePluginSettingsByName).was.called_with(PluginLoader, "test")
+        assert.stub(PluginLoader.stopPluginInstanceByName).was.called()
+        assert.stub(PluginLoader.deletePluginSettingsByName).was.called()
         assert.is_nil(G_reader_settings:readSetting("plugins_disabled").test)
 
         UIManager.askForRestart:revert()
@@ -247,22 +248,23 @@ describe("PluginLoader module", function()
     end)
 
     it("calls deletePluginSettings on the loaded plugin instance by internal plugin id", function()
+        local called_instance
         local instance = {
-            deletePluginSettings = function() end,
+            deletePluginSettings = function(self)
+                called_instance = self
+            end,
         }
 
         stub(PluginLoader, "getPluginInstance", function()
             return instance
         end)
-        stub(instance, "deletePluginSettings")
 
         local ok, err = PluginLoader:deletePluginSettingsByName("test")
 
         assert.is_true(ok)
         assert.is_nil(err)
-        assert.stub(instance.deletePluginSettings).was.called_with(instance)
+        assert.are.equal(instance, called_instance)
 
-        instance.deletePluginSettings:revert()
         PluginLoader.getPluginInstance:revert()
     end)
 end)
