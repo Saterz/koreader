@@ -390,26 +390,16 @@ function PluginLoader:genPluginManagerSubItem()
             table.insert(user_plugin_items, item)
         end
     end
-    local no_plugin_fallback = {
-        text = _("No plugins."),
-        enabled_func = function()
-            return false
-        end
-    }
-    if #builtin_plugin_items == 0 then
-        table.insert(builtin_plugin_items, no_plugin_fallback)
-    end
-    if #user_plugin_items == 0 then
-        table.insert(user_plugin_items, no_plugin_fallback)
-    end
     return {
         {
             text = _("Built-in plugins"),
+            enabled_func = function() return #builtin_plugin_items > 0 end,
             sub_item_table = builtin_plugin_items,
         },
         {
             text = _("User plugins"),
             enabled_func = function() return #user_plugin_items > 0 end,
+            sub_item_table = user_plugin_items,
         },
     }
 end
