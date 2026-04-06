@@ -99,7 +99,6 @@ end
 local function getMenuTable(plugin)
     local t = {}
     t.name = plugin.name
-    t.path = plugin.path
     t.is_builtin = plugin.is_builtin
     t.fullname = string.format("%s%s", plugin.fullname or plugin.name,
         plugin.deprecated and " (" .. _("outdated") .. ")" or "")
@@ -356,6 +355,18 @@ function PluginLoader:genPluginManagerSubItem()
         else
             table.insert(user_plugin_items, item)
         end
+    end
+    local no_plugin_fallback = {
+        text = _("No plugins."),
+        enabled_func = function()
+            return false
+        end
+    }
+    if #builtin_plugin_items == 0 then
+        table.insert(builtin_plugin_items, no_plugin_fallback)
+    end
+    if #user_plugin_items == 0 then
+        table.insert(user_plugin_items, no_plugin_fallback)
     end
     return {
         {
