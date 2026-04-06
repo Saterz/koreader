@@ -398,6 +398,7 @@ function PluginLoader:genPluginManagerSubItem()
     }
     if #builtin_plugin_items == 0 then
         table.insert(builtin_plugin_items, no_plugin_fallback)
+        })
     end
     if #user_plugin_items == 0 then
         table.insert(user_plugin_items, no_plugin_fallback)
