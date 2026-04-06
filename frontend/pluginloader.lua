@@ -18,6 +18,46 @@ local _ = require("gettext")
 
 local DEFAULT_PLUGIN_PATH = "plugins"
 
+local BUILTIN_PLUGINS = {
+    ["archiveviewer"] = true,
+    ["autodim"] = true,
+    ["autostandby"] = true,
+    ["autosuspend"] = true,
+    ["autoturn"] = true,
+    ["autowarmth"] = true,
+    ["batterystat"] = true,
+    ["bookshortcuts"] = true,
+    ["calibre"] = true,
+    ["cloudstorage"] = true,
+    ["coverbrowser"] = true,
+    ["coverimage"] = true,
+    ["docsettingtweak"] = true,
+    ["exporter"] = true,
+    ["externalkeyboard"] = true,
+    ["gestures"] = true,
+    ["hello"] = true,
+    ["hotkeys"] = true,
+    ["httpinspector"] = true,
+    ["japanese"] = true,
+    ["keepalive"] = true,
+    ["kosync"] = true,
+    ["movetoarchive"] = true,
+    ["newsdownloader"] = true,
+    ["opds"] = true,
+    ["perceptionexpander"] = true,
+    ["profiles"] = true,
+    ["qrclipboard"] = true,
+    ["readtimer"] = true,
+    ["SSH"] = true,
+    ["statistics"] = true,
+    ["systemstat"] = true,
+    ["terminal"] = true,
+    ["texteditor"] = true,
+    ["timesync"] = true,
+    ["vocabbuilder"] = true,
+    ["wallabag"] = true,
+}
+
 local DEPRECATION_MESSAGES = {
     remove = _("This plugin is unmaintained and will be removed soon."),
     feature = _("The following features are unmaintained and will be removed soon:"),
@@ -59,6 +99,8 @@ end
 local function getMenuTable(plugin)
     local t = {}
     t.name = plugin.name
+    t.path = plugin.path
+    t.is_builtin = plugin.is_builtin
     t.fullname = string.format("%s%s", plugin.fullname or plugin.name,
         plugin.deprecated and " (" .. _("outdated") .. ")" or "")
 
@@ -178,6 +220,7 @@ function PluginLoader:_discover()
                     ["path"] = plugin_root,
                     ["disabled"] = disabled,
                     ["name"] = plugin_name,
+                    ["is_builtin"] = lookup_path == DEFAULT_PLUGIN_PATH and BUILTIN_PLUGINS[plugin_name] == true,
                 })
             end
         end
@@ -204,6 +247,7 @@ function PluginLoader:_load(t)
         elseif type(plugin_module.disabled) ~= "boolean" or not plugin_module.disabled then
             plugin_module.path = plugin_root
             plugin_module.name = v.name
+            plugin_module.is_builtin = v.is_builtin
             if disabled then
                 table.insert(self.disabled_plugins, plugin_module)
             else
@@ -270,9 +314,10 @@ function PluginLoader:genPluginManagerSubItem()
         table.sort(self.all_plugins, function(v1, v2) return v1.fullname < v2.fullname end)
     end
 
-    local plugin_table = {}
+    local builtin_plugin_items = {}
+    local user_plugin_items = {}
     for __, plugin in ipairs(self.all_plugins) do
-        table.insert(plugin_table, {
+        local item = {
             text = plugin.fullname,
             checked_func = function()
                 return plugin.enable
@@ -305,9 +350,23 @@ function PluginLoader:genPluginManagerSubItem()
                 end
             end,
             help_text = plugin.description,
-        })
+        }
+        if plugin.is_builtin then
+            table.insert(builtin_plugin_items, item)
+        else
+            table.insert(user_plugin_items, item)
+        end
     end
-    return plugin_table
+    return {
+        {
+            text = _("Built-in plugins"),
+            sub_item_table = builtin_plugin_items,
+        },
+        {
+            text = _("User plugins"),
+            sub_item_table = user_plugin_items,
+        },
+    }
 end
 
 function PluginLoader:createPluginInstance(plugin, attr)
