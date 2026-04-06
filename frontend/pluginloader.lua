@@ -375,7 +375,7 @@ function PluginLoader:genPluginManagerSubItem()
         },
         {
             text = _("User plugins"),
-            sub_item_table = user_plugin_items,
+            enabled_func = function() return #user_plugin_items > 0 end,
         },
     }
 end
