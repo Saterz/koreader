@@ -223,7 +223,7 @@ function PluginLoader:_discover()
                     ["path"] = plugin_root,
                     ["disabled"] = disabled,
                     ["name"] = plugin_name,
-                    ["is_builtin"] = lookup_path == DEFAULT_PLUGIN_PATH and BUILTIN_PLUGINS[plugin_name] == true,
+                    ["is_builtin"] = BUILTIN_PLUGINS[plugin_name] == true,
                 })
             end
         end
