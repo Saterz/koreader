@@ -248,7 +248,6 @@ function PluginLoader:_load(t)
         elseif type(plugin_module.disabled) ~= "boolean" or not plugin_module.disabled then
             plugin_module.path = plugin_root
             plugin_module.name = v.name
-            plugin_module.is_builtin = v.is_builtin
             if disabled then
                 table.insert(self.disabled_plugins, plugin_module)
             else
@@ -382,7 +381,7 @@ function PluginLoader:genPluginManagerSubItem()
                 UIManager:show(confirmbox)
             end,
         }
-        if BUILTIN_PLUGINS[plugin_name] == true then
+        if BUILTIN_PLUGINS[plugin.name] == true then
             table.insert(builtin_plugin_items, item)
         else
             table.insert(user_plugin_items, item)
